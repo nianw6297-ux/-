@@ -1,0 +1,23 @@
+# app.py
+import streamlit as st, pandas as pd, matplotlib.pyplot as plt
+from io import BytesIO
+st.set_page_config(page_title="六合彩统计", layout="wide")
+st.title("📱 手机六合彩统计器")
+upload = st.file_uploader("上传 CSV/Excel", type=["csv","xlsx"])
+if upload:
+    df = pd.read_csv(upload) if upload.name.endswith("csv") else pd.read_excel(upload)
+    st.write("预览前5期", df.head())
+    c = {"大小": {n:0 for n in ["大","小"]},
+         "单双": {n:0 for n in ["单","双"]}}
+    z = {i+1:0 for i in range(12)}
+    for row in df.itertuples(index=False):
+        for n in row:
+            n = int(n)
+            c["大小"]["大" if n>=25 else "小"] += 1
+            c["单双"]["单" if n%2 else "双"] += 1
+            z[(n-1)%12+1] += 1
+    cols = st.columns(3)
+    for col, k in zip(cols, ["大小","单双"]):
+        fig, ax = plt.subplots(); ax.bar(c[k].keys(), c[k].values()); ax.set_title(k); col.pyplot(fig)
+    st.bar_chart(pd.Series(z, name="出现次数"))
+    st.download_button("📥 导出 CSV", df.to_csv(index=False), "result.csv")
